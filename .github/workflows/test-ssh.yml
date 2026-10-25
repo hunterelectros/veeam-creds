@@ -1,7 +1,7 @@
 name: Test SSH Connection
 
 on:
-  workflow_dispatch: # Дозволяє запускати перевірку вручну кнопкою в інтерфейсі GitHub
+  workflow_dispatch:
 
 jobs:
   test:
@@ -12,14 +12,11 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SERVER_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          # 1. Створюємо папку .ssh та записуємо приватний ключ
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          # 2. Додаємо сервер у список відомих хостів з урахуванням порту 22222
           ssh-keyscan -p 22222 -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
-          # 3. Виконуємо тестову команду на сервері від імені користувача deploy на порт 22222
           echo "Пробуємо підключитися на порт 22222..."
-          ssh -p 22222 -i ~/.ssh/deploy_key deploy@"$SERVER_HOST" "echo 'Успіх! З\'єднання на порт 22222 встановлено. Аптайм сервера:' && uptime"
+          ssh -p 22222 -i ~/.ssh/deploy_key deploy@"$SERVER_HOST" "echo 'Успіх! З\'єднання встановлено. Аптайм сервера:' && uptime"
