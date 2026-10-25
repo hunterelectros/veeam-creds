@@ -1,22 +1,28 @@
-name: Test SSH Connection
+name: Check Ubuntu Version
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Дозволяє запускати перевірку вручну кнопкою в інтерфейсі GitHub
 
 jobs:
-  test:
+  check-server:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH Key & Connect
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Connect to server and check OS version
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SERVER_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
+          # 1. Створюємо папку .ssh та записуємо новий чистий приватний ключ
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+          # 2. Додаємо сервер у known_hosts з урахуванням порту 22222
           ssh-keyscan -p 22222 -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
-          echo "Пробуємо підключитися на порт 22222..."
-          ssh -p 22222 -i ~/.ssh/deploy_key deploy@"$SERVER_HOST" "echo 'Успіх! З\'єднання встановлено. Аптайм сервера:' && uptime"
+          # 3. Виконуємо команду перевірки версії Ubuntu на сервері
+          echo "Підключаємося до сервера на порт 22222..."
+          ssh -p 22222 -i ~/.ssh/deploy_key deploy@"$SERVER_HOST" "cat /etc/os-release"
